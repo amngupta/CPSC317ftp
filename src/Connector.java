@@ -51,6 +51,11 @@ public class Connector {
         }
     }
 
+    private int getResponseCode(String response){
+        String[] split = response.split("\\s+");
+        return Integer.parseInt(split[0]);
+    }
+
     /**
      *  This function reads the response from the server as String
      *  and then acts according to the response
@@ -58,10 +63,11 @@ public class Connector {
      * @return String with error code and message for that error code
      */
     private String readResponse(String response){
-        if(response.contains("426") || response.contains("425")){
+        int responseCode = this.getResponseCode(response);
+        if(responseCode == 426 || responseCode == 425){
             return "0xFFFC Control connection to "+this.IPAddress+ " on port "+ this.PORT+" failed to open.";
         }
-        if(response.contains("550")){
+        if(responseCode == 550){
             return "0x38E";
         }
         else{
@@ -74,8 +80,7 @@ public class Connector {
      * This method runs indefinitely until user enters QUIT
      */
     private void runClient(){
-        System.out.println("Running client");
-        while(true) {
+//        System.out.println("Running client");
             try {
                 System.out.print("csftp> ");
                 String userInput = this.userInputBR.readLine();
@@ -88,16 +93,16 @@ public class Connector {
                 String response = readResponse(this.br.readLine());
                 if (response.contains("0x")) {
                     System.out.println(response);
-                    break;
                 }
                 else {
                     System.out.println(response);
+                    this.runClient();
                 }
             } catch (Exception e) {
                 System.out.println(e);
                 return;
             }
-        }
+//        }
     }
 
     public static void main(String args[]){
