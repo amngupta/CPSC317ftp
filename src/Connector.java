@@ -81,9 +81,45 @@ public class Connector {
      */
     private void runClient(){
 //        System.out.println("Running client");
+
             try {
                 System.out.print("csftp> ");
                 String userInput = this.userInputBR.readLine();
+                String[] args = userInput.split("\\s+");
+                if (args.length == 2) {
+                    if ("user".contentEquals(args[0])) {
+                        out.println("USER" + " " + args[1]);
+
+                        System.out.println(readResponse(this.br.readLine()));
+                        this.runClient();
+                        return;
+                    }
+                    if ("pw".contentEquals(args[0])) {
+                        out.println("PASS" + " " + args[1]);
+
+                        System.out.println(readResponse(this.br.readLine()));
+                        this.runClient();
+                        return;
+                    }
+                    if ("cd".contentEquals(args[0])) {
+                        out.println("CWD " + args[1]);
+                        System.out.println(readResponse(this.br.readLine()));
+                        this.runClient();
+                        return;
+                    }
+                }
+                if ("features".contentEquals(args[0])) {
+                    out.println("FEAT");
+
+                    while(br.readLine()!= "") {
+                        System.out.println(br.readLine());
+                    }
+                    this.runClient();
+                    return;
+                }
+
+
+
                 if ("quit".contentEquals(userInput)) {
                     this.out.println("QUIT");
                     this.sock.close();
@@ -120,6 +156,7 @@ public class Connector {
 //                    FtpClient test = FtpClient.create();
 //                    test.enablePassiveMode(true);
             conn.runClient();
+
             System.out.println(IPAddress + Port);
         }
     }
