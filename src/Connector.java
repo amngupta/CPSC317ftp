@@ -154,6 +154,10 @@ public class Connector {
                     this.sock.close();
                     return;
                 }
+                else{
+                    this.runClient();
+                    return;
+                }
                 String response = readResponse(this.br.readLine());
                 if (response.contains("0x")) {
                     System.out.println(response);
