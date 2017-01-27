@@ -45,7 +45,6 @@ public class Connector {
             this.br = new BufferedReader(new InputStreamReader(this.sock.getInputStream()));
             this.out = new PrintWriter(this.sock.getOutputStream(), true);
             this.userInputBR = new BufferedReader(new InputStreamReader(System.in));
-            System.out.println(this.br.readLine());
         }catch(Exception e){
             System.out.println(e);
         }
@@ -76,56 +75,79 @@ public class Connector {
         }
     }
 
+    private void runPassive(String[] args){
+        String command = args[0];
+        String argument = null;
+        if(args.length > 1) {
+            argument = args[1];
+        }
+        String response = null;
+        this.out.println("PASV");
+        try {
+            response =readResponse(this.br.readLine());
+            System.out.println(response);
+            int responseCode = this.getResponseCode(response);
+            if(responseCode == 227){
+                //Entering Passive Mode
+                String IPandPORT = response.substring(response.indexOf("(")+1,response.indexOf(")"));
+                String[] numbers = IPandPORT.split(",");
+                String ipAddress = numbers[0] +"."+numbers[1] +"."+numbers[2] +"."+numbers[3];
+                int Port = Integer.parseInt(numbers[4])*256 + Integer.parseInt(numbers[5]);
+                System.out.println(ipAddress+Port);
+                Connector pass = new Connector(ipAddress, Port);
+                this.out.println("LIST");
+                return;
+            }
+            return;
+        }
+        catch(Exception e){
+            System.out.println(e);
+            return;
+        }
+    }
+
     /**
      * This method runs indefinitely until user enters QUIT
      */
     private void runClient(){
-//        System.out.println("Running client");
-
             try {
                 System.out.print("csftp> ");
                 String userInput = this.userInputBR.readLine();
                 String[] args = userInput.split("\\s+");
                 if (args.length == 2) {
+                    String command = null;
                     if ("user".contentEquals(args[0])) {
-                        out.println("USER" + " " + args[1]);
-
-                        System.out.println(readResponse(this.br.readLine()));
-                        this.runClient();
-                        return;
+                        command = "USER";
                     }
-                    if ("pw".contentEquals(args[0])) {
-                        out.println("PASS" + " " + args[1]);
-
-                        System.out.println(readResponse(this.br.readLine()));
-                        this.runClient();
-                        return;
+                    else if ("pw".contentEquals(args[0])) {
+                        command = "PASS";
                     }
-                    if ("cd".contentEquals(args[0])) {
-                        out.println("CWD " + args[1]);
-                        System.out.println(readResponse(this.br.readLine()));
-                        this.runClient();
-                        return;
+                    else if ("cd".contentEquals(args[0])) {
+                        command = "CWD";
+                    }
+                    if("get".contentEquals(args[0])){
+                        this.runPassive(args);
+                    }
+                    else{
+                        this.out.println(command+" "+ args[1]);
                     }
                 }
-                if ("features".contentEquals(args[0])) {
-                    out.println("FEAT");
-
+                else if ("features".contentEquals(args[0])) {
+                    this.out.println("FEAT");
                     while(br.readLine()!= "") {
                         System.out.println(br.readLine());
                     }
+                }
+                else if("dir".contentEquals(args[0])){
+                    this.runPassive(args);
                     this.runClient();
                     return;
                 }
-
-
-
-                if ("quit".contentEquals(userInput)) {
+                else if ("quit".contentEquals(userInput)) {
                     this.out.println("QUIT");
                     this.sock.close();
                     return;
                 }
-                this.out.println(userInput);
                 String response = readResponse(this.br.readLine());
                 if (response.contains("0x")) {
                     System.out.println(response);
@@ -138,7 +160,6 @@ public class Connector {
                 System.out.println(e);
                 return;
             }
-//        }
     }
 
     public static void main(String args[]){
@@ -152,9 +173,9 @@ public class Connector {
                 Port = Integer.parseInt(args[1]);
             }
             Connector conn = new Connector(IPAddress, Port);
-//                    Probably cannot use this library... but lets check
-//                    FtpClient test = FtpClient.create();
-//                    test.enablePassiveMode(true);
+            try{
+                System.out.println(conn.br.readLine());
+            }catch (Exception e){}
             conn.runClient();
 
             System.out.println(IPAddress + Port);
