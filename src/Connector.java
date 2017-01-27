@@ -134,9 +134,15 @@ public class Connector {
                 }
                 else if ("features".contentEquals(args[0])) {
                     this.out.println("FEAT");
-                    while(br.readLine()!= "") {
-                        System.out.println(br.readLine());
+                    String line = this.br.readLine();
+                    while (!line.equals("")){
+                        line = this.br.readLine();
+                        System.out.println(line);
+                        if(line.contains("211")){
+                            break;
+                        }
                     }
+                    this.runClient();
                 }
                 else if("dir".contentEquals(args[0])){
                     this.runPassive(args);
