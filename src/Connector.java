@@ -95,16 +95,30 @@ public class Connector {
                 int Port = Integer.parseInt(numbers[4])*256 + Integer.parseInt(numbers[5]);
                 System.out.println(ipAddress+Port);
                 Connector pass = new Connector(ipAddress, Port);
-                this.out.println("LIST");
-                String line = this.br.readLine();
-                while (line != null){
-                    line = pass.br.readLine();
-                    if (line.contains("null")){
-                        break;
-                    }
+                if(command.equals("get")){
+                    this.out.println("RETR"+argument);
+                    System.out.println("Before");
+                    String line = pass.br.readLine();
+                    while (line != null){
+                        if (line.contains("null")) {
+                            break;
+                        }
                         System.out.println(line);
+                        line = pass.br.readLine();
+                    }
+                    System.out.println("After");
                 }
-
+                else if (command.equals("dir")){
+                    this.out.println("LIST");
+                    String line = pass.br.readLine();
+                    while (line != null){
+                        if (line.contains("null")){
+                            break;
+                        }
+                        System.out.println(line);
+                        line = pass.br.readLine();
+                    }
+                }
                 return;
             }
             return;
