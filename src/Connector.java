@@ -84,7 +84,7 @@ public class Connector {
         String response = null;
         this.out.println("PASV");
         try {
-            response =readResponse(this.br.readLine());
+            response = readResponse(this.br.readLine());
             System.out.println(response);
             int responseCode = this.getResponseCode(response);
             if(responseCode == 227){
@@ -96,6 +96,15 @@ public class Connector {
                 System.out.println(ipAddress+Port);
                 Connector pass = new Connector(ipAddress, Port);
                 this.out.println("LIST");
+                String line = this.br.readLine();
+                while (line != null){
+                    line = pass.br.readLine();
+                    if (line.contains("null")){
+                        break;
+                    }
+                        System.out.println(line);
+                }
+
                 return;
             }
             return;
