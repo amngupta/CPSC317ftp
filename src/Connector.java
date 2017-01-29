@@ -69,10 +69,74 @@ public class Connector {
         if(responseCode == 550){
             return "0x38E";
         }
-        else{
-                return response;
-//            return "0xFFFF Processing error. "+response;
+        if (responseCode >=100 && responseCode < 400){
+            return response;
         }
+        else{
+//                return response;
+            return "0xFFFF Processing error. "+response;
+        }
+    }
+
+    private String readCommand(String[] args){
+        if(args.length > 0) {
+            String command = args[0];
+            switch (command) {
+                case "user": {
+                    if (args.length != 2) {
+                        return "0x002 Incorrect number of arguments.";
+                    } else {
+                        return "USER " + args[1];
+                    }
+                }
+                case "pw": {
+                    if (args.length != 2) {
+                        return "0x002 Incorrect number of arguments.";
+                    } else {
+                        return "PASS " + args[1];
+                    }
+                }
+                case "cd": {
+                    if (args.length != 2) {
+                        return "0x002 Incorrect number of arguments.";
+                    } else {
+                        return "CWD " + args[1];
+                    }
+                }
+                case "get": {
+                    if (args.length != 2) {
+                        return "0x002 Incorrect number of arguments.";
+                    } else {
+                        return "get";
+                    }
+                }
+                case "quit": {
+                    if (args.length != 1) {
+                        return "0x002 Incorrect number of arguments.";
+                    } else {
+                        return "quit";
+                    }
+                }
+                case "dir": {
+                    if (args.length != 1) {
+                        return "0x002 Incorrect number of arguments.";
+                    } else {
+                        return "dir";
+                    }
+                }
+                case "features": {
+                    if (args.length != 1) {
+                        return "0x002 Incorrect number of arguments.";
+                    } else {
+                        return "features";
+                    }
+                }
+                default:{
+                    return "0x001 Invalid command.";
+                }
+            }
+        }
+        return "0x001 Invalid command.";
     }
 
     private void runPassive(String[] args){
@@ -87,16 +151,16 @@ public class Connector {
             response = readResponse(this.br.readLine());
             System.out.println(response);
             int responseCode = this.getResponseCode(response);
+            String IPandPORT = response.substring(response.indexOf("(")+1,response.indexOf(")"));
+            String[] numbers = IPandPORT.split(",");
+            String ipAddress = numbers[0] +"."+numbers[1] +"."+numbers[2] +"."+numbers[3];
+            int Port = Integer.parseInt(numbers[4])*256 + Integer.parseInt(numbers[5]);
             if(responseCode == 227){
                 //Entering Passive Mode
-                String IPandPORT = response.substring(response.indexOf("(")+1,response.indexOf(")"));
-                String[] numbers = IPandPORT.split(",");
-                String ipAddress = numbers[0] +"."+numbers[1] +"."+numbers[2] +"."+numbers[3];
-                int Port = Integer.parseInt(numbers[4])*256 + Integer.parseInt(numbers[5]);
-                System.out.println(ipAddress+Port);
+//                System.out.println(ipAddress+Port);
                 Connector pass = new Connector(ipAddress, Port);
                 if(command.equals("get")){
-                    this.out.println("RETR"+argument);
+                    this.out.println("RETR "+argument);
                     System.out.println("Before");
                     String line = pass.br.readLine();
                     while (line != null){
@@ -121,7 +185,11 @@ public class Connector {
                 }
                 return;
             }
-            return;
+            else{
+                System.out.println("0x3A2 Data transfer connection to " + ipAddress+" on port "+Port+" yyy failed to open.");
+                this.sock.close();
+                return;
+            }
         }
         catch(Exception e){
             System.out.println(e);
@@ -130,32 +198,22 @@ public class Connector {
     }
 
     /**
-     * This method runs indefinitely until user enters QUIT
+     * This method runs an instance of client until user enters QUIT
      */
     private void runClient(){
             try {
                 System.out.print("csftp> ");
                 String userInput = this.userInputBR.readLine();
                 String[] args = userInput.split("\\s+");
-                if (args.length == 2) {
-                    String command = null;
-                    if ("user".contentEquals(args[0])) {
-                        command = "USER";
+                String command = this.readCommand(args);
+                if("get".contentEquals(command)){
+                    this.runPassive(args);
+                    if(!this.sock.isClosed()) {
+                        this.runClient();
                     }
-                    else if ("pw".contentEquals(args[0])) {
-                        command = "PASS";
-                    }
-                    else if ("cd".contentEquals(args[0])) {
-                        command = "CWD";
-                    }
-                    if("get".contentEquals(args[0])){
-                        this.runPassive(args);
-                    }
-                    else{
-                        this.out.println(command+" "+ args[1]);
-                    }
+                    return;
                 }
-                else if ("features".contentEquals(args[0])) {
+                else if ("features".contentEquals(command)) {
                     this.out.println("FEAT");
                     String line = this.br.readLine();
                     while (!line.equals("")){
@@ -167,27 +225,41 @@ public class Connector {
                     }
                     this.runClient();
                 }
-                else if("dir".contentEquals(args[0])){
+                else if("dir".contentEquals(command)){
                     this.runPassive(args);
-                    this.runClient();
+                    if(!this.sock.isClosed()) {
+                        this.runClient();
+                    }
                     return;
                 }
-                else if ("quit".contentEquals(userInput)) {
+                else if ("quit".contentEquals(command)) {
                     this.out.println("QUIT");
                     this.sock.close();
                     return;
                 }
-                else{
+                else if (command.contains("0x")){
+                    //Error for invalid command
+                    System.out.println(command);
+                    this.sock.close();
+                    return;
+                }
+                else if("newline".contentEquals(command)){
                     this.runClient();
                     return;
+                }
+                else{
+                    this.out.println(command);
                 }
                 String response = readResponse(this.br.readLine());
                 if (response.contains("0x")) {
                     System.out.println(response);
+                    this.sock.close();
+                    return;
                 }
                 else {
                     System.out.println(response);
                     this.runClient();
+                    return;
                 }
             } catch (Exception e) {
                 System.out.println(e);
