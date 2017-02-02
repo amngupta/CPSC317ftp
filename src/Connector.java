@@ -81,6 +81,10 @@ public class Connector {
     private String readCommand(String[] args){
         if(args.length > 0) {
             String command = args[0];
+            if(command.isEmpty() || command.startsWith("#"))
+            {
+                return "newline";
+            }
             switch (command) {
                 case "user": {
                     if (args.length != 2) {
