@@ -1,8 +1,6 @@
 //import sun.net.ftp.FtpClient;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 
 /*
@@ -47,34 +45,6 @@ public class Connector {
             this.userInputBR = new BufferedReader(new InputStreamReader(System.in));
         }catch(Exception e){
             System.out.println(e);
-        }
-    }
-
-    private int getResponseCode(String response){
-        String[] split = response.split("\\s+");
-        return Integer.parseInt(split[0]);
-    }
-
-    /**
-     *  This function reads the response from the server as String
-     *  and then acts according to the response
-     * @param response
-     * @return String with error code and message for that error code
-     */
-    private String readResponse(String response){
-        int responseCode = this.getResponseCode(response);
-        if(responseCode == 426 || responseCode == 425){
-            return "0xFFFC Control connection to "+this.IPAddress+ " on port "+ this.PORT+" failed to open.";
-        }
-        if(responseCode == 550){
-            return "0x38E";
-        }
-        if (responseCode >=100 && responseCode < 400){
-            return response;
-        }
-        else{
-//                return response;
-            return "0xFFFF Processing error. "+response;
         }
     }
 
@@ -143,6 +113,35 @@ public class Connector {
         return "0x001 Invalid command.";
     }
 
+    private int getResponseCode(String response){
+        String[] split = response.split("\\s+");
+        return Integer.parseInt(split[0]);
+    }
+
+    /**
+     *  This function reads the response from the server as String
+     *  and then acts according to the response
+     * @param response
+     * @return String with error code and message for that error code
+     */
+    private String readResponse(String response){
+        int responseCode = this.getResponseCode(response);
+        if(responseCode == 426 || responseCode == 425){
+            return "0xFFFC Control connection to "+this.IPAddress+ " on port "+ this.PORT+" failed to open.";
+        }
+        if(responseCode == 550){
+            return "0x38E";
+        }
+        if (responseCode >=100 && responseCode < 400){
+            return response;
+        }
+        else{
+//                return response;
+            return "0xFFFF Processing error. "+response;
+        }
+    }
+
+
     private void runPassive(String[] args){
         String command = args[0];
         String argument = null;
@@ -155,50 +154,81 @@ public class Connector {
             response = readResponse(this.br.readLine());
             System.out.println(response);
             int responseCode = this.getResponseCode(response);
-            String IPandPORT = response.substring(response.indexOf("(")+1,response.indexOf(")"));
-            String[] numbers = IPandPORT.split(",");
-            String ipAddress = numbers[0] +"."+numbers[1] +"."+numbers[2] +"."+numbers[3];
-            int Port = Integer.parseInt(numbers[4])*256 + Integer.parseInt(numbers[5]);
-            if(responseCode == 227){
-                //Entering Passive Mode
-//                System.out.println(ipAddress+Port);
-                Connector pass = new Connector(ipAddress, Port);
-                if(command.equals("get")){
-                    this.out.println("RETR "+argument);
-                    System.out.println("Before");
-                    String line = pass.br.readLine();
-                    while (line != null){
-                        if (line.contains("null")) {
-                            break;
+            if(responseCode > 100 && responseCode <400){
+                String IPandPORT = response.substring(response.indexOf("(")+1,response.indexOf(")"));
+                String[] numbers = IPandPORT.split(",");
+                String ipAddress = numbers[0] +"."+numbers[1] +"."+numbers[2] +"."+numbers[3];
+                int Port = Integer.parseInt(numbers[4])*256 + Integer.parseInt(numbers[5]);
+                if(responseCode == 227){
+                    //Entering Passive Mode
+                    Connector pass = new Connector(ipAddress, Port);
+                    if(command.equals("get")){
+                        this.out.println("RETR "+argument);
+                        System.out.println(this.br.readLine());
+                        String line = pass.br.readLine();
+                        String finalString = line;
+                        while (line != null){
+                            if (line.contains("null")) {
+                                break;
+                            }
+                            System.out.println(line);
+                            line = pass.br.readLine();
+                            finalString +=line;
                         }
-                        System.out.println(line);
-                        line = pass.br.readLine();
-                    }
-                    System.out.println("After");
-                }
-                else if (command.equals("dir")){
-                    this.out.println("LIST");
-                    System.out.println(this.br.readLine());
-                    String line = pass.br.readLine();
-                    while (line != null){
-                        if (line.contains("null")){
-                            break;
+                        String responseEOF = readResponse(this.br.readLine());
+                        if(responseEOF.contains("0x")){
+                            System.out.println(responseEOF);
+                            this.sock.close();
+                            return;
                         }
-                        System.out.println(line);
-                        line = pass.br.readLine();
+                        // TO DO
+                        else{
+                            System.out.println(response);
+                            try {
+                                byte myByteArray[] = finalString.getBytes();
+                                FileOutputStream fos = new FileOutputStream("/home/aman/Desktop/test.txt.gz");
+                                fos.write(myByteArray);
+                                fos.close();
+                            }
+                            catch(Exception e){
+                                System.out.println("0x38E Access to local file "+ argument + " denied. ");
+                                return;
+                            }
+                        }
+
                     }
-                    System.out.println(this.br.readLine());
+                    else if (command.equals("dir")){
+                        this.out.println("LIST");
+                        System.out.println(this.br.readLine());
+                        String line = pass.br.readLine();
+                        while (line != null){
+                            if (line.contains("null")){
+                                break;
+                            }
+                            System.out.println(line);
+                            line = pass.br.readLine();
+                        }
+                        System.out.println(this.br.readLine());
+                    }
+                    return;
                 }
-                return;
+                else{
+                    System.out.println("0x3A2 Data transfer connection to " + ipAddress+" on port "+Port+" yyy failed to open.");
+                    this.sock.close();
+                    return;
+                }
             }
             else{
-                System.out.println("0x3A2 Data transfer connection to " + ipAddress+" on port "+Port+" yyy failed to open.");
+                System.out.println("0xFFFF Processing error. yyyy. " + response);
                 this.sock.close();
                 return;
             }
         }
+        catch(IOException e){
+            System.out.println("0xFFFE Input error while reading commands, terminating.");
+        }
         catch(Exception e){
-            System.out.println(e);
+            System.out.println("0xFFFF Processing error." + e);
             return;
         }
     }
@@ -247,6 +277,9 @@ public class Connector {
                 else if (command.contains("0x")){
                     //Error for invalid command
                     System.out.println(command);
+                    if(command.contains("38E")){
+                        System.out.println("0x38E Access to local file "+ args[0] + " denied. ");
+                    }
                     this.sock.close();
                     return;
                 }
@@ -268,8 +301,12 @@ public class Connector {
                     this.runClient();
                     return;
                 }
-            } catch (Exception e) {
-                System.out.println(e);
+            }
+            catch(IOException e){
+                System.out.println("0xFFFE Input error while reading commands, terminating.");
+            }
+            catch(Exception e){
+                System.out.println("0xFFFF Processing error." + e);
                 return;
             }
     }
