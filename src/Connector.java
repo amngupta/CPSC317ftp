@@ -174,6 +174,7 @@ public class Connector {
                 }
                 else if (command.equals("dir")){
                     this.out.println("LIST");
+                    System.out.println(this.br.readLine());
                     String line = pass.br.readLine();
                     while (line != null){
                         if (line.contains("null")){
@@ -182,6 +183,7 @@ public class Connector {
                         System.out.println(line);
                         line = pass.br.readLine();
                     }
+                    System.out.println(this.br.readLine());
                 }
                 return;
             }
@@ -217,9 +219,10 @@ public class Connector {
                     this.out.println("FEAT");
                     String line = this.br.readLine();
                     while (!line.equals("")){
-                        line = this.br.readLine();
                         System.out.println(line);
+                        line = this.br.readLine();
                         if(line.contains("211")){
+                            System.out.println(line);
                             break;
                         }
                     }
