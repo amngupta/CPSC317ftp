@@ -3,17 +3,6 @@ package ftpClient;
 import java.io.*;
 import java.net.Socket;
 
-/*
-* Error Codes:
-* 220: Connection Successful
-* 530: Need to login
-* 331: Need password
-* 230: Login Successful
-* 550: Failed to open file
-* 250: Directory successfully changed
-* 227: Entering Passive Mode
-* https://kb.globalscape.com/KnowledgebaseArticle10142.aspx
-* */
 
 /**
  * This is the base class for the CSftp. We are calling it the connector
@@ -48,6 +37,11 @@ public class Connector {
         }
     }
 
+    /**
+     * This function is used to test if the user entered a valid command
+     * @param args: the command that is supplied by the user
+     * @return if Command is valid, it returns the PARSED command, else it returns error
+     */
     private String readCommand(String[] args){
         if(args.length > 0) {
             String command = args[0];
@@ -113,6 +107,12 @@ public class Connector {
         return "0x001 Invalid command.";
     }
 
+
+    /**
+     * This function is used to extract the integer value of the response code
+     * @param response: The response from the server
+     * @return Integer value of the response from server
+     */
     private int getResponseCode(String response){
         if (!response.contains("-")) {
             String[] split = response.split("\\s+");
@@ -141,12 +141,17 @@ public class Connector {
             return response;
         }
         else{
-//                return response;
             return "0xFFFF Processing error. "+response;
         }
     }
 
-
+    /**
+     * This function is used to run another instance of the connector class
+     * This helps in running the ftp in Passive mode.
+     * Using this class, we are able to successfully use functions such as dir and get
+     * @param args These are the commands supplied by the user. dir has only one command
+     *             while get has the get command along with the filename
+     */
     private void runPassive(String[] args){
         String command = args[0];
         String argument = null;
@@ -157,80 +162,80 @@ public class Connector {
         this.out.println("PASV");
         try {
             response = readResponse(this.br.readLine());
-            System.out.println(response);
-            int responseCode = this.getResponseCode(response);
-            if(responseCode > 100 && responseCode <400){
-                String IPandPORT = response.substring(response.indexOf("(")+1,response.indexOf(")"));
-                String[] numbers = IPandPORT.split(",");
-                String ipAddress = numbers[0] +"."+numbers[1] +"."+numbers[2] +"."+numbers[3];
-                int Port = Integer.parseInt(numbers[4])*256 + Integer.parseInt(numbers[5]);
-                if(responseCode == 227){
-                    //Entering Passive Mode
-                    Connector pass = new Connector(ipAddress, Port);
-                    if(command.equals("get")){
-                        this.out.println("RETR "+argument);
-                        System.out.println(this.br.readLine());
-                        String line = pass.br.readLine();
-                        String finalString = line;
-                        while (line != null){
-                            if (line.contains("null")) {
-                                break;
-                            }
-                            System.out.println(line);
-                            line = pass.br.readLine();
-                            finalString +=line;
-                        }
-
-                        String responseEOF = readResponse(this.br.readLine());
-                        if(responseEOF.contains("0x")){
-                            System.out.println(responseEOF);
-                            this.sock.close();
-                            return;
-                        }
-                        // TO DO
-                        else{
-                            System.out.println(response);
-                            try {
-                                byte[] myByteArray = finalString.getBytes();
-                                FileOutputStream fos = new FileOutputStream("C:/Users/Trevor/Desktop/test.txt");
-                                fos.write(myByteArray);
-                                fos.close();
-                                //PrintWriter out = new PrintWriter("C:/Users/Trevor/Desktop/filename.xml");
-                                //out.print(finalString);
-                                //out.close();
-                            }
-                            catch(Exception e){
-                                System.out.println("0x38E Access to local file "+ argument + " denied. ");
-                                return;
-                            }
-                        }
-
-                    }
-                    else if (command.equals("dir")){
-                        this.out.println("LIST");
-                        System.out.println(this.br.readLine());
-                        String line = pass.br.readLine();
-                        while (line != null){
-                            if (line.contains("null")){
-                                break;
-                            }
-                            System.out.println(line);
-                            line = pass.br.readLine();
-                        }
-                        System.out.println(this.br.readLine());
-                    }
-                    return;
-                }
-                else{
-                    System.out.println("0x3A2 Data transfer connection to " + ipAddress+" on port "+Port+" yyy failed to open.");
-                    this.sock.close();
-                    return;
-                }
-            }
-            else{
-                System.out.println("0xFFFF Processing error. yyyy. " + response);
+            if(response.contains("0x")){
+                System.out.println(response);
                 this.sock.close();
                 return;
+            }
+            else {
+                int responseCode = this.getResponseCode(response);
+                if (responseCode > 100 && responseCode < 400) {
+                    String IPandPORT = response.substring(response.indexOf("(") + 1, response.indexOf(")"));
+                    String[] numbers = IPandPORT.split(",");
+                    String ipAddress = numbers[0] + "." + numbers[1] + "." + numbers[2] + "." + numbers[3];
+                    int Port = Integer.parseInt(numbers[4]) * 256 + Integer.parseInt(numbers[5]);
+                    if (responseCode == 227) {
+                        //Entering Passive Mode
+                        Connector pass = new Connector(ipAddress, Port);
+                        if (command.equals("get")) {
+                            this.out.println("RETR " + argument);
+                            String responseBF = readResponse(this.br.readLine());
+                            if (responseBF.contains("0x")) {
+                                System.out.println(responseBF);
+                                this.sock.close();
+                                return;
+                            }
+                            String line = pass.br.readLine();
+                            String finalString = line;
+                            while (line != null) {
+                                if (line.contains("null")) {
+                                    break;
+                                }
+                                System.out.println(line);
+                                line = pass.br.readLine();
+                                finalString += line;
+                            }
+
+                            String responseEOF = readResponse(this.br.readLine());
+                            if (responseEOF.contains("0x")) {
+                                System.out.println(responseEOF);
+                                this.sock.close();
+                                return;
+                            }
+                            // TODO
+                            else {
+                                System.out.println(response);
+                                try {
+                                    byte[] myByteArray = finalString.getBytes();
+                                    FileOutputStream fos = new FileOutputStream(argument);
+                                    fos.write(myByteArray);
+                                    fos.close();
+                                } catch (Exception e) {
+                                    System.out.println("0x38E Access to local file " + argument + " denied. ");
+                                    return;
+                                }
+                            }
+
+                        } else if (command.equals("dir")) {
+                            this.out.println("LIST");
+                            System.out.println(this.br.readLine());
+                            String line = pass.br.readLine();
+                            while (line != null) {
+                                if (line.contains("null")) {
+                                    break;
+                                }
+                                System.out.println(line);
+                                line = pass.br.readLine();
+                            }
+                            System.out.println(this.br.readLine());
+                        }
+                        return;
+                    } else {
+                        System.out.println("0x3A2 Data transfer connection to " + ipAddress + " on port " + Port + " yyy failed to open.");
+                        this.sock.close();
+                        return;
+                    }
+                }
             }
         }
         catch(IOException e){
@@ -273,7 +278,8 @@ public class Connector {
                 }
                 else if("dir".contentEquals(command)){
                     this.runPassive(args);
-                    if(!this.sock.isClosed()) {
+                    if(!(this.sock.isClosed())) {
+                        System.out.println("Here");
                         this.runClient();
                     }
                     return;
