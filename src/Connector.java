@@ -60,6 +60,7 @@ public class Connector {
                     if (args.length != 2) {
                         return "0x002 Incorrect number of arguments.";
                     } else {
+                        System.out.println("--> USER " + args[1]);
                         return "USER " + args[1];
                     }
                 }
@@ -67,6 +68,7 @@ public class Connector {
                     if (args.length != 2) {
                         return "0x002 Incorrect number of arguments.";
                     } else {
+                        System.out.println("--> PASS "+ args[1]);
                         return "PASS " + args[1];
                     }
                 }
@@ -74,6 +76,7 @@ public class Connector {
                     if (args.length != 2) {
                         return "0x002 Incorrect number of arguments.";
                     } else {
+                        System.out.println("--> CWD " + args[1]);
                         return "CWD " + args[1];
                     }
                 }
@@ -157,7 +160,7 @@ public class Connector {
         this.out.println("PASV");
         try {
             response = readResponse(this.br.readLine());
-            System.out.println(response);
+            System.out.println("<-- " + response);
             int responseCode = this.getResponseCode(response);
             if(responseCode > 100 && responseCode <400){
                 String IPandPORT = response.substring(response.indexOf("(")+1,response.indexOf(")"));
@@ -169,6 +172,7 @@ public class Connector {
                     Connector pass = new Connector(ipAddress, Port);
                     if(command.equals("get")){
                         this.out.println("RETR "+argument);
+                        System.out.println("--> RETR " + argument);
                         System.out.println(this.br.readLine());
                         String line = pass.br.readLine();
                         String finalString = line;
@@ -192,7 +196,7 @@ public class Connector {
                             System.out.println(response);
                             try {
                                 byte[] myByteArray = finalString.getBytes();
-                                FileOutputStream fos = new FileOutputStream("C:/Users/Trevor/Desktop/test.txt");
+                                FileOutputStream fos = new FileOutputStream(".");
                                 fos.write(myByteArray);
                                 fos.close();
                                 //PrintWriter out = new PrintWriter("C:/Users/Trevor/Desktop/filename.xml");
@@ -208,16 +212,17 @@ public class Connector {
                     }
                     else if (command.equals("dir")){
                         this.out.println("LIST");
-                        System.out.println(this.br.readLine());
+                        System.out.println("--> LIST");
+                        System.out.println("<-- " + this.br.readLine());
                         String line = pass.br.readLine();
                         while (line != null){
                             if (line.contains("null")){
                                 break;
                             }
-                            System.out.println(line);
+                            System.out.println("<-- "+ line);
                             line = pass.br.readLine();
                         }
-                        System.out.println(this.br.readLine());
+                        System.out.println("<-- " + this.br.readLine());
                     }
                     return;
                 }
@@ -243,7 +248,8 @@ public class Connector {
     }
 
     /**
-     * This method runs an instance of client until user enters QUIT
+     * This method runs an instance of client until user enters QUIT or an error occurs
+     * causing the client to stop
      */
     private void runClient(){
             try {
@@ -260,12 +266,13 @@ public class Connector {
                 }
                 else if ("features".contentEquals(command)) {
                     this.out.println("FEAT");
+                    System.out.println("---> FEAT");
                     String line = this.br.readLine();
                     while (!line.equals("")){
-                        System.out.println(line);
+                        System.out.println("<-- " + line);
                         line = this.br.readLine();
                         if(line.contains("211")){
-                            System.out.println(line);
+                            System.out.println("<-- " + line);
                             break;
                         }
                     }
@@ -280,6 +287,7 @@ public class Connector {
                 }
                 else if ("quit".contentEquals(command)) {
                     this.out.println("QUIT");
+                    System.out.println("<-- " + this.br.readLine());
                     this.sock.close();
                     return;
                 }
@@ -301,17 +309,17 @@ public class Connector {
                 }
                 String response = readResponse(this.br.readLine());
                 if (response.contains("0x")) {
-                    System.out.println(response);
+                    System.out.println("<-- " + response);
                     this.sock.close();
                     return;
                 }
                 else {
 
                     while(response.contains("-")) {
-                        System.out.println(response);
+                        System.out.println("<-- " + response);
                         response = readResponse(this.br.readLine());
                     }
-                    System.out.println(response);
+                    System.out.println("<-- " + response);
                     this.runClient();
                     return;
                 }
