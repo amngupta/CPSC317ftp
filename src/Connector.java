@@ -140,7 +140,6 @@ public class Connector {
         if (responseCode >=100 && responseCode < 400){
             return response;
         }
-
         else{
 //                return response;
             return "0xFFFF Processing error. "+response;
@@ -315,7 +314,6 @@ public class Connector {
                     System.out.println(response);
                     this.runClient();
                     return;
-
                 }
             }
             catch(IOException e){
