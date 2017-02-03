@@ -114,8 +114,13 @@ public class Connector {
     }
 
     private int getResponseCode(String response){
-        String[] split = response.split("\\s+");
-        return Integer.parseInt(split[0]);
+        if (!response.contains("-")) {
+            String[] split = response.split("\\s+");
+            return Integer.parseInt(split[0]);
+        } else {
+            return Integer.parseInt(response.substring(0,3));
+        }
+
     }
 
     /**
@@ -135,6 +140,7 @@ public class Connector {
         if (responseCode >=100 && responseCode < 400){
             return response;
         }
+
         else{
 //                return response;
             return "0xFFFF Processing error. "+response;
@@ -175,6 +181,7 @@ public class Connector {
                             line = pass.br.readLine();
                             finalString +=line;
                         }
+
                         String responseEOF = readResponse(this.br.readLine());
                         if(responseEOF.contains("0x")){
                             System.out.println(responseEOF);
@@ -185,10 +192,13 @@ public class Connector {
                         else{
                             System.out.println(response);
                             try {
-                                byte myByteArray[] = finalString.getBytes();
-                                FileOutputStream fos = new FileOutputStream("/home/aman/Desktop/test.txt.gz");
+                                byte[] myByteArray = finalString.getBytes();
+                                FileOutputStream fos = new FileOutputStream("C:/Users/Trevor/Desktop/test.txt");
                                 fos.write(myByteArray);
                                 fos.close();
+                                //PrintWriter out = new PrintWriter("C:/Users/Trevor/Desktop/filename.xml");
+                                //out.print(finalString);
+                                //out.close();
                             }
                             catch(Exception e){
                                 System.out.println("0x38E Access to local file "+ argument + " denied. ");
@@ -297,9 +307,15 @@ public class Connector {
                     return;
                 }
                 else {
+
+                    while(response.contains("-")) {
+                        System.out.println(response);
+                        response = readResponse(this.br.readLine());
+                    }
                     System.out.println(response);
                     this.runClient();
                     return;
+
                 }
             }
             catch(IOException e){
