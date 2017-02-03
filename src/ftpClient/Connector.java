@@ -1,4 +1,4 @@
-//import sun.net.ftp.FtpClient;
+package ftpClient;
 
 import java.io.*;
 import java.net.Socket;
