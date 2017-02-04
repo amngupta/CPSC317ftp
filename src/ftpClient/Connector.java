@@ -166,7 +166,7 @@ public class Connector {
         try {
             response = readResponse(this.br.readLine());
             if(response.contains("0x")){
-                System.out.println("<-- "+response);
+                System.out.println(response);
                 this.sock.close();
                 return;
             }
@@ -230,7 +230,7 @@ public class Connector {
                                 if (line.contains("null")) {
                                     break;
                                 }
-                                System.out.println("<-- " + line);
+                                System.out.println(line);
                                 line = pass.br.readLine();
                             }
                             System.out.println("<-- " + this.br.readLine());
@@ -282,26 +282,31 @@ public class Connector {
                         }
                     }
                     this.runClient();
-                } else if("dir".contentEquals(command)){
+                }
+                else if("dir".contentEquals(command)){
                     this.runPassive(args);
                     if(!(this.sock.isClosed())) {
 
                         this.runClient();
                     }
                     return;
-                } else if ("quit".contentEquals(command)) {
+                }
+                else if ("quit".contentEquals(command)) {
                     System.out.println("--> QUIT");
                     this.out.println("QUIT");
                     System.out.println("<-- " + this.br.readLine());
                     this.sock.close();
                     return;
-                } else if (command.contains("0x001")) {
+                }
+                else if (command.contains("0x001")) {
                     System.out.println(command);
                     this.runClient();
-                } else if (command.contains("0x002")){
+                }
+                else if (command.contains("0x002")){
                     System.out.println(command);
                     this.runClient();
-                } else if (command.contains("0x")){
+                }
+                else if (command.contains("0x")){
                     //Error for invalid command
                     System.out.println(command);
                     if(command.contains("38E")){
@@ -354,7 +359,9 @@ public class Connector {
                 Port = Integer.parseInt(args[1]);
             }
             Connector conn = new Connector(IPAddress, Port);
+
             try{
+
                 System.out.println(conn.br.readLine());
             }catch (Exception e){}
             conn.runClient();
