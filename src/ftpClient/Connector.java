@@ -54,6 +54,7 @@ public class Connector {
                     if (args.length != 2) {
                         return "0x002 Incorrect number of arguments.";
                     } else {
+                        System.out.println("--> USER " + args[1]);
                         return "USER " + args[1];
                     }
                 }
@@ -61,6 +62,7 @@ public class Connector {
                     if (args.length != 2) {
                         return "0x002 Incorrect number of arguments.";
                     } else {
+                        System.out.println("--> PASS " + args[1]);
                         return "PASS " + args[1];
                     }
                 }
@@ -68,6 +70,7 @@ public class Connector {
                     if (args.length != 2) {
                         return "0x002 Incorrect number of arguments.";
                     } else {
+                        System.out.println("--> CWD " + args[1]);
                         return "CWD " + args[1];
                     }
                 }
@@ -163,7 +166,7 @@ public class Connector {
         try {
             response = readResponse(this.br.readLine());
             if(response.contains("0x")){
-                System.out.println(response);
+                System.out.println("<-- "+response);
                 this.sock.close();
                 return;
             }
@@ -178,10 +181,11 @@ public class Connector {
                         //Entering Passive Mode
                         Connector pass = new Connector(ipAddress, Port);
                         if (command.equals("get")) {
+                            System.out.println("--> RETR "+ argument);
                             this.out.println("RETR " + argument);
                             String responseBF = readResponse(this.br.readLine());
                             if (responseBF.contains("0x")) {
-                                System.out.println(responseBF);
+                                System.out.println("<-- " +responseBF);
                                 this.sock.close();
                                 return;
                             }
@@ -191,23 +195,24 @@ public class Connector {
                                 if (line.contains("null")) {
                                     break;
                                 }
-                                System.out.println(line);
+
                                 line = pass.br.readLine();
                                 finalString += line;
                             }
 
                             String responseEOF = readResponse(this.br.readLine());
                             if (responseEOF.contains("0x")) {
-                                System.out.println(responseEOF);
+                                System.out.println("<-- "+responseEOF);
                                 this.sock.close();
                                 return;
                             }
                             // TODO
                             else {
-                                System.out.println(response);
+                                System.out.println("<-- " + response);
                                 try {
+                                    String current_dir = System.getProperty("user.dir");
                                     byte[] myByteArray = finalString.getBytes();
-                                    FileOutputStream fos = new FileOutputStream(argument);
+                                    FileOutputStream fos = new FileOutputStream(current_dir+ "/" +argument);
                                     fos.write(myByteArray);
                                     fos.close();
                                 } catch (Exception e) {
@@ -217,17 +222,18 @@ public class Connector {
                             }
 
                         } else if (command.equals("dir")) {
+                            System.out.println("--> LIST");
                             this.out.println("LIST");
-                            System.out.println(this.br.readLine());
+                            System.out.println("<-- " + this.br.readLine());
                             String line = pass.br.readLine();
                             while (line != null) {
                                 if (line.contains("null")) {
                                     break;
                                 }
-                                System.out.println(line);
+                                System.out.println("<-- " + line);
                                 line = pass.br.readLine();
                             }
-                            System.out.println(this.br.readLine());
+                            System.out.println("<-- " + this.br.readLine());
                         }
                         return;
                     } else {
@@ -264,32 +270,38 @@ public class Connector {
                     return;
                 }
                 else if ("features".contentEquals(command)) {
+                    System.out.println("--> FEAT");
                     this.out.println("FEAT");
                     String line = this.br.readLine();
                     while (!line.equals("")){
-                        System.out.println(line);
+                        System.out.println("<-- " + line);
                         line = this.br.readLine();
                         if(line.contains("211")){
-                            System.out.println(line);
+                            System.out.println("<--" + line);
                             break;
                         }
                     }
                     this.runClient();
-                }
-                else if("dir".contentEquals(command)){
+                } else if("dir".contentEquals(command)){
                     this.runPassive(args);
                     if(!(this.sock.isClosed())) {
-                        System.out.println("Here");
+
                         this.runClient();
                     }
                     return;
-                }
-                else if ("quit".contentEquals(command)) {
+                } else if ("quit".contentEquals(command)) {
+                    System.out.println("--> QUIT");
                     this.out.println("QUIT");
+                    System.out.println("<-- " + this.br.readLine());
                     this.sock.close();
                     return;
-                }
-                else if (command.contains("0x")){
+                } else if (command.contains("0x001")) {
+                    System.out.println(command);
+                    this.runClient();
+                } else if (command.contains("0x002")){
+                    System.out.println(command);
+                    this.runClient();
+                } else if (command.contains("0x")){
                     //Error for invalid command
                     System.out.println(command);
                     if(command.contains("38E")){
@@ -317,7 +329,7 @@ public class Connector {
                         System.out.println(response);
                         response = readResponse(this.br.readLine());
                     }
-                    System.out.println(response);
+                    System.out.println("<-- "+response);
                     this.runClient();
                     return;
                 }
