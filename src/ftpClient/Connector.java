@@ -2,6 +2,7 @@ package ftpClient;
 
 import java.io.*;
 import java.net.Socket;
+import java.net.SocketException;
 
 
 /**
@@ -294,8 +295,6 @@ public class Connector {
                 else if ("quit".contentEquals(command)) {
                     System.out.println("--> QUIT");
                     this.out.println("QUIT");
-                    System.out.println("<-- " + this.br.readLine());
-                    this.sock.close();
                     return;
                 }
                 else if (command.contains("0x001")) {
@@ -312,7 +311,8 @@ public class Connector {
                     if(command.contains("38E")){
                         System.out.println("0x38E Access to local file "+ args[0] + " denied. ");
                     }
-                    this.sock.close();
+                    if(!this.sock.isClosed())
+                        this.sock.close();
                     return;
                 }
                 else if("newline".contentEquals(command)){
@@ -329,15 +329,18 @@ public class Connector {
                     return;
                 }
                 else {
-
                     while(response.contains("-")) {
                         System.out.println(response);
                         response = readResponse(this.br.readLine());
                     }
                     System.out.println("<-- "+response);
-                    this.runClient();
+                    if(!this.sock.isClosed())
+                        this.runClient();
                     return;
                 }
+            }
+            catch(SocketException se){
+                return;
             }
             catch(IOException e){
                 System.out.println("0xFFFE Input error while reading commands, terminating.");
