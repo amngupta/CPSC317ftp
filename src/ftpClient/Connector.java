@@ -144,6 +144,9 @@ public class Connector {
         if (responseCode >=100 && responseCode < 400){
             return response;
         }
+        if (responseCode == 530) {
+            return response;
+        }
         else{
             return "0xFFFF Processing error. "+response;
         }
@@ -283,6 +286,7 @@ public class Connector {
                         }
                     }
                     this.runClient();
+                    return;
                 }
                 else if("dir".contentEquals(command)){
                     this.runPassive(args);
@@ -295,6 +299,7 @@ public class Connector {
                 else if ("quit".contentEquals(command)) {
                     System.out.println("--> QUIT");
                     this.out.println("QUIT");
+                    System.out.println("<-- " + this.br.readLine());
                     return;
                 }
                 else if (command.contains("0x001")) {
